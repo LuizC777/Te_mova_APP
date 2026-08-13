@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../estado/estado_chamado.dart';
 import '../models.dart';
+import 'execucao_page.dart';
+import 'rota_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,22 +13,50 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _aceito = false;
-
-  void _aceitarChamado() {
-    setState(() => _aceito = true);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(
-            'Chamado aceito — ${solicitacaoAtual.rodovia}, '
-            'km ${kmFormatado(solicitacaoAtual.km)}',
+  @override
+  Widget build(BuildContext context) {
+    // ListenableBuilder reconstrói sempre que o estado do chamado muda.
+    return ListenableBuilder(
+      listenable: estadoChamado,
+      builder: (context, _) {
+        final tela = switch (estadoChamado.tela) {
+          TelaHome.chamado => _ListaChamados(
+            key: const ValueKey('chamados'),
+            statusAnterior: estadoChamado.status,
+            onAceitar: estadoChamado.aceitar,
           ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+          TelaHome.rota => RotaPage(
+            key: const ValueKey('rota'),
+            solicitacao: estadoChamado.solicitacao,
+            onChegou: estadoChamado.iniciarPoda,
+            onCancelar: estadoChamado.cancelar,
+          ),
+          TelaHome.execucao => ExecucaoPage(
+            key: const ValueKey('execucao'),
+            estado: estadoChamado,
+          ),
+        };
+
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 260),
+          child: tela,
+        );
+      },
+    );
   }
+}
+
+class _ListaChamados extends StatelessWidget {
+  const _ListaChamados({
+    super.key,
+    required this.onAceitar,
+    this.statusAnterior,
+  });
+
+  final VoidCallback onAceitar;
+
+  /// Situação do último atendimento, para avisar o operador.
+  final StatusPoda? statusAnterior;
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +81,66 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        if (statusAnterior != null) ...[
+          const SizedBox(height: 12),
+          _AvisoStatusAnterior(status: statusAnterior!),
+        ],
         const SizedBox(height: 12),
         _CardSolicitacao(
           solicitacao: solicitacaoAtual,
-          aceito: _aceito,
-          onAceitar: _aceitarChamado,
+          onAceitar: onAceitar,
+          reaceite: statusAnterior == StatusPoda.interrompida,
         ),
       ],
+    );
+  }
+}
+
+/// Faixa informando como terminou o atendimento anterior.
+class _AvisoStatusAnterior extends StatelessWidget {
+  const _AvisoStatusAnterior({required this.status});
+
+  final StatusPoda status;
+
+  @override
+  Widget build(BuildContext context) {
+    final (cor, icone, texto) = switch (status) {
+      StatusPoda.interrompida => (
+        const Color(0xFFFF5C5C),
+        Icons.error_outline,
+        'Atendimento anterior interrompido. O chamado segue aberto.',
+      ),
+      StatusPoda.concluida => (
+        const Color(0xFF4ADE80),
+        Icons.check_circle_outline,
+        'Poda concluída e registrada no histórico.',
+      ),
+      _ => (
+        const Color(0xFFFBBF24),
+        Icons.info_outline,
+        'Atendimento em andamento.',
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cor.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icone, size: 18, color: cor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              texto,
+              style: TextStyle(color: cor, fontSize: 13, height: 1.3),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -64,13 +148,15 @@ class _HomePageState extends State<HomePage> {
 class _CardSolicitacao extends StatelessWidget {
   const _CardSolicitacao({
     required this.solicitacao,
-    required this.aceito,
     required this.onAceitar,
+    this.reaceite = false,
   });
 
   final Solicitacao solicitacao;
-  final bool aceito;
   final VoidCallback onAceitar;
+
+  /// Verdadeiro quando o chamado já foi aceito e interrompido antes.
+  final bool reaceite;
 
   @override
   Widget build(BuildContext context) {
@@ -151,27 +237,22 @@ class _CardSolicitacao extends StatelessWidget {
             child: SizedBox(
               width: double.infinity,
               height: 52,
-              child: aceito
-                  ? FilledButton.tonalIcon(
-                      onPressed: null,
-                      icon: const Icon(Icons.check_circle_outline),
-                      label: const Text('Chamado aceito'),
-                    )
-                  : FilledButton(
-                      onPressed: onAceitar,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: scheme.primary,
-                        foregroundColor: Colors.white,
-                        textStyle: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text('Aceitar chamado'),
-                    ),
+              child: FilledButton.icon(
+                onPressed: onAceitar,
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF5E22F3),
+                  foregroundColor: Colors.white,
+                  textStyle: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.navigation_outlined, size: 20),
+                label: Text(reaceite ? 'Retomar chamado' : 'Aceitar chamado'),
+              ),
             ),
           ),
         ],
