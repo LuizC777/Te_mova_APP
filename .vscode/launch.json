@@ -1,0 +1,20 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "te-mova Chrome :5050",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "toolArgs": [
+        "--web-port=5050",
+        "--web-hostname=127.0.0.1"
+      ],
+      "args": [
+        "--dart-define=API_BASE=http://127.0.0.1:8000",
+        "--dart-define=APP_BASE=http://127.0.0.1:5050"
+      ]
+    }
+  ]
+}

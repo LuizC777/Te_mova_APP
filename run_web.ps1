@@ -1,0 +1,8 @@
+$ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
+
+flutter run -d chrome `
+  --web-port=5050 `
+  --web-hostname=127.0.0.1 `
+  --dart-define=API_BASE=http://127.0.0.1:8000 `
+  --dart-define=APP_BASE=http://127.0.0.1:5050

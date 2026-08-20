@@ -1,0 +1,14 @@
+oracleJdk-26/
+.dart_tool/
+.idea/
+build/
+android/
+ios/
+linux/
+macos/
+windows/
+.git/
+.flutter-plugins
+.flutter-plugins-dependencies
+**/*.iml
+**/.DS_Store

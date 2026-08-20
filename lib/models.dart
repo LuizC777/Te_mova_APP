@@ -39,9 +39,36 @@ class Solicitacao {
   final double km;
   final String sentido;
 
+  Solicitacao copiarCom({
+    DateTime? solicitadoEm,
+    double? alturaGrama,
+    double? alturaLimite,
+    Urgencia? urgencia,
+    String? rodovia,
+    double? km,
+    String? sentido,
+  }) {
+    return Solicitacao(
+      solicitadoEm: solicitadoEm ?? this.solicitadoEm,
+      alturaGrama: alturaGrama ?? this.alturaGrama,
+      alturaLimite: alturaLimite ?? this.alturaLimite,
+      urgencia: urgencia ?? this.urgencia,
+      rodovia: rodovia ?? this.rodovia,
+      km: km ?? this.km,
+      sentido: sentido ?? this.sentido,
+    );
+  }
+
   /// Quanto da altura limite já foi atingido (0.0 a 1.0).
   double get proporcaoLimite => (alturaGrama / alturaLimite).clamp(0.0, 1.0);
 }
+
+Urgencia urgenciaDeNivel(String nivel) => switch (nivel) {
+  'verde' => Urgencia.baixa,
+  'amarelo' => Urgencia.media,
+  'vermelho' || 'laranja' => Urgencia.alta,
+  _ => Urgencia.media,
+};
 
 class Operador {
   const Operador({
@@ -97,7 +124,7 @@ class Poda {
 }
 
 // ---------------------------------------------------------------------------
-// Dados mockados — trocar por chamadas de API depois
+// Dados mockados — histórico inicial; chamados ao vivo vêm do dashboard
 // ---------------------------------------------------------------------------
 
 final solicitacaoAtual = Solicitacao(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../estado/estado_chamado.dart';
 import '../models.dart';
+import '../servicos/servico_sync.dart';
 import 'execucao_page.dart';
 import 'rota_page.dart';
 
@@ -23,6 +24,12 @@ class _HomePageState extends State<HomePage> {
           TelaHome.chamado => _ListaChamados(
             key: const ValueKey('chamados'),
             statusAnterior: estadoChamado.status,
+            conectado: estadoChamado.conectado,
+            erroSync: estadoChamado.erroSync,
+            apiBase: estadoChamado.apiBase,
+            dashUrl: estadoChamado.dashUrl,
+            chamados: estadoChamado.disponiveis,
+            recemChegados: estadoChamado.recemChegados,
             onAceitar: estadoChamado.aceitar,
           ),
           TelaHome.rota => RotaPage(
@@ -50,13 +57,23 @@ class _ListaChamados extends StatelessWidget {
   const _ListaChamados({
     super.key,
     required this.onAceitar,
+    required this.chamados,
+    required this.conectado,
+    required this.apiBase,
+    required this.dashUrl,
+    this.recemChegados = const [],
     this.statusAnterior,
+    this.erroSync,
   });
 
-  final VoidCallback onAceitar;
-
-  /// Situação do último atendimento, para avisar o operador.
+  final void Function([ChamadoRemoto? chamado]) onAceitar;
+  final List<ChamadoRemoto> chamados;
+  final List<String> recemChegados;
+  final bool conectado;
+  final String apiBase;
+  final String dashUrl;
   final StatusPoda? statusAnterior;
+  final String? erroSync;
 
   @override
   Widget build(BuildContext context) {
@@ -67,13 +84,17 @@ class _ListaChamados extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Chamado disponível',
+              chamados.isEmpty
+                  ? 'Nenhum chamado'
+                  : chamados.length == 1
+                  ? 'Chamado disponível'
+                  : '${chamados.length} chamados disponíveis',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
             ),
             Text(
-              'Equipe ${equipeDelta.nome}',
+              'Comandos do dashboard',
               style: TextStyle(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                 fontSize: 13,
@@ -81,22 +102,159 @@ class _ListaChamados extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 12),
+        _FaixaSync(
+          conectado: conectado,
+          erro: erroSync,
+          apiBase: apiBase,
+          dashUrl: dashUrl,
+        ),
+        if (recemChegados.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _AvisoNovoComando(quantidade: recemChegados.length),
+        ],
         if (statusAnterior != null) ...[
           const SizedBox(height: 12),
           _AvisoStatusAnterior(status: statusAnterior!),
         ],
         const SizedBox(height: 12),
-        _CardSolicitacao(
-          solicitacao: solicitacaoAtual,
-          onAceitar: onAceitar,
-          reaceite: statusAnterior == StatusPoda.interrompida,
-        ),
+        if (chamados.isEmpty)
+          const _VazioDashboard()
+        else
+          for (final chamado in chamados) ...[
+            _CardSolicitacao(
+              solicitacao: chamado.solicitacao,
+              situacao: chamado.situacao,
+              equipe: chamado.equipe,
+              novo: recemChegados.contains(chamado.id),
+              onAceitar: () => onAceitar(chamado),
+              reaceite:
+                  statusAnterior == StatusPoda.interrompida &&
+                  chamado.status == 'interrompida',
+            ),
+            const SizedBox(height: 12),
+          ],
       ],
     );
   }
 }
 
-/// Faixa informando como terminou o atendimento anterior.
+class _FaixaSync extends StatelessWidget {
+  const _FaixaSync({
+    required this.conectado,
+    required this.apiBase,
+    required this.dashUrl,
+    this.erro,
+  });
+
+  final bool conectado;
+  final String apiBase;
+  final String dashUrl;
+  final String? erro;
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = conectado ? const Color(0xFF4ADE80) : const Color(0xFFFBBF24);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cor.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            conectado ? Icons.sync : Icons.sync_disabled,
+            size: 16,
+            color: cor,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              conectado
+                  ? 'Sincronizado com o dashboard ($dashUrl) via $apiBase'
+                  : (erro ?? 'Aguardando o dashboard em $dashUrl'),
+              style: TextStyle(color: cor, fontSize: 13, height: 1.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VazioDashboard extends StatelessWidget {
+  const _VazioDashboard();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF15111D),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.inbox_outlined, color: scheme.primary),
+          const SizedBox(height: 12),
+          const Text(
+            'Nenhuma tarefa enviada',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'No dashboard, selecione um trecho e toque em Enviar ao app da equipe. '
+            'O chamado aparece aqui na hora, com a equipe, o KM e a altura prevista.',
+            style: TextStyle(
+              color: scheme.onSurfaceVariant,
+              fontSize: 13.5,
+              height: 1.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvisoNovoComando extends StatelessWidget {
+  const _AvisoNovoComando({required this.quantidade});
+
+  final int quantidade;
+
+  @override
+  Widget build(BuildContext context) {
+    const cor = Color(0xFF5E22F3);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: cor.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.campaign_outlined, size: 18, color: cor),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              quantidade == 1
+                  ? 'Novo comando recebido do dashboard.'
+                  : '$quantidade novos comandos recebidos do dashboard.',
+              style: const TextStyle(color: cor, fontSize: 13, height: 1.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AvisoStatusAnterior extends StatelessWidget {
   const _AvisoStatusAnterior({required this.status});
 
@@ -149,11 +307,17 @@ class _CardSolicitacao extends StatelessWidget {
   const _CardSolicitacao({
     required this.solicitacao,
     required this.onAceitar,
+    this.situacao = '',
+    this.equipe = '',
+    this.novo = false,
     this.reaceite = false,
   });
 
   final Solicitacao solicitacao;
   final VoidCallback onAceitar;
+  final String situacao;
+  final String equipe;
+  final bool novo;
 
   /// Verdadeiro quando o chamado já foi aceito e interrompido antes.
   final bool reaceite;
@@ -178,6 +342,10 @@ class _CardSolicitacao extends StatelessWidget {
             child: Row(
               children: [
                 _ChipUrgencia(urgencia: s.urgencia),
+                if (novo) ...[
+                  const SizedBox(width: 8),
+                  _ChipNovo(),
+                ],
                 const Spacer(),
                 Icon(Icons.schedule, size: 15, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 6),
@@ -224,6 +392,28 @@ class _CardSolicitacao extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
+                if (equipe.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    equipe,
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+                if (situacao.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    situacao,
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontSize: 13,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -256,6 +446,28 @@ class _CardSolicitacao extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChipNovo extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFF5E22F3).withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Text(
+        'NOVO',
+        style: TextStyle(
+          color: Color(0xFF5E22F3),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.4,
+        ),
       ),
     );
   }
