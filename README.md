@@ -385,6 +385,8 @@ Os diferenciais estruturais são o **ciclo fechado de dados** — cada poda regi
 
 **Para as rodovias e a sociedade:** faixa de domínio com visibilidade preservada, menor risco de incêndio em vegetação seca, poda apenas quando necessária e um padrão replicável de manutenção preditiva para outros modais.
 
+> A versão completa, com personas detalhadas, análise de riscos e indicadores propostos para o piloto, está em [docs/te-mova-plano-de-negocio.pdf](docs/te-mova-plano-de-negocio.pdf).
+
 ---
 
 ## Entregas por sprint
