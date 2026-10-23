@@ -70,7 +70,7 @@ Três camadas, em três repositórios.
 | Item | Onde |
 | --- | --- |
 | **APK do aplicativo** | [Releases deste repositório](../../releases) |
-| **Vídeo final** | _a definir_ |
+| **Vídeo final** | https://youtu.be/nJIH66aQvEw |
 | **Plano de negócio** | [PDF completo](docs/te-mova-plano-de-negocio.pdf) · [resumo neste documento](#plano-de-negócio) | |
 | Repositório do dashboard | https://github.com/Senador2006/temova-dashboard |
 | Repositório do modelo preditivo | https://github.com/Senador2006/temova-modelo-1 |
@@ -434,7 +434,7 @@ Entregas desta sprint:
 - Modo de demonstração no app, para avaliação sem depender do dashboard no ar
 - APK de release, publicado nas [Releases deste repositório](../../releases)
 - Plano de negócio, consolidado [neste documento](#plano-de-negócio)
-- Vídeo final: _a definir_
+- Vídeo final: https://youtu.be/nJIH66aQvEw
 
 ---
 
