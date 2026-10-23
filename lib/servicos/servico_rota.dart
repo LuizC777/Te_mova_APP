@@ -25,7 +25,7 @@ abstract class ServicoRota {
 
 /// Simula o deslocamento percorrendo o trajeto em [duracaoSimulada].
 class ServicoRotaMock implements ServicoRota {
-  const ServicoRotaMock({this.duracaoSimulada = const Duration(seconds: 90)});
+  const ServicoRotaMock({this.duracaoSimulada = const Duration(seconds: 20)});
 
   /// Quanto tempo o percurso inteiro leva na simulação.
   final Duration duracaoSimulada;

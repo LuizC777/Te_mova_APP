@@ -177,7 +177,6 @@ class _PintorArea extends CustomPainter {
       Offset.zero & size,
       Paint()..color = const Color(0xFF161320),
     );
-    _vegetacao(canvas, size);
 
     final projetar = _criarProjecao(area.eixo, size);
     final eixo = area.eixo.map(projetar).toList();
@@ -186,19 +185,6 @@ class _PintorArea extends CustomPainter {
     _faixaDeTrabalho(canvas, eixo);
     _marcosQuilometricos(canvas, eixo);
     _equipe(canvas, projetar(posicaoEquipe));
-  }
-
-  /// Textura de fundo sugerindo mato dos dois lados da pista.
-  void _vegetacao(Canvas canvas, Size size) {
-    final tinta = Paint()..color = const Color(0xFF1D2A1E);
-    final aleatorio = math.Random(7); // semente fixa: não pisca ao repintar
-
-    for (var i = 0; i < 90; i++) {
-      final x = aleatorio.nextDouble() * size.width;
-      final y = aleatorio.nextDouble() * size.height;
-      final r = 6 + aleatorio.nextDouble() * 14;
-      canvas.drawCircle(Offset(x, y), r, tinta);
-    }
   }
 
   void _pista(Canvas canvas, List<Offset> eixo) {

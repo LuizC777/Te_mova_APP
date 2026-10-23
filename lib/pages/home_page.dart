@@ -209,11 +209,22 @@ class _VazioDashboard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             'No dashboard, selecione um trecho e toque em Enviar ao app da equipe. '
-            'O chamado aparece aqui na hora, com a equipe, o KM e a altura prevista.',
+            'O chamado aparece aqui na hora, com a equipe, o KM e a altura prevista. '
+            'Sem o dashboard no ar, use o botão abaixo para gerar um chamado local.',
             style: TextStyle(
               color: scheme.onSurfaceVariant,
               fontSize: 13.5,
               height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 14),
+          TextButton.icon(
+            onPressed: estadoChamado.simularNovoChamado,
+            icon: const Icon(Icons.play_circle_outline, size: 18),
+            label: const Text('Gerar chamado de demonstração'),
+            style: TextButton.styleFrom(
+              foregroundColor: scheme.primary,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ],
@@ -342,10 +353,7 @@ class _CardSolicitacao extends StatelessWidget {
             child: Row(
               children: [
                 _ChipUrgencia(urgencia: s.urgencia),
-                if (novo) ...[
-                  const SizedBox(width: 8),
-                  _ChipNovo(),
-                ],
+                if (novo) ...[const SizedBox(width: 8), _ChipNovo()],
                 const Spacer(),
                 Icon(Icons.schedule, size: 15, color: scheme.onSurfaceVariant),
                 const SizedBox(width: 6),

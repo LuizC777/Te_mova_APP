@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'pages/equipe_page.dart';
 import 'pages/historico_page.dart';
 import 'pages/home_page.dart';
+import 'estado/estado_chamado.dart';
 
 void main() => runApp(const TeMovaApp());
 
@@ -69,7 +70,16 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const _Logo()),
+      appBar: AppBar(
+        title: GestureDetector(
+          onLongPress: () {
+            estadoChamado.simularNovoChamado();
+            setState(() => _index = 0);
+          },
+          behavior: HitTestBehavior.opaque,
+          child: const _Logo(),
+        ),
+      ),
       // IndexedStack mantém o estado de cada aba viva ao trocar.
       body: SafeArea(
         child: IndexedStack(index: _index, children: _paginas),

@@ -6,6 +6,8 @@ import '../config/api.dart';
 import '../models.dart';
 import '../servicos/servico_sync.dart';
 
+import 'dart:math';
+
 /// Situação de um serviço, do aceite até a conclusão.
 enum StatusPoda {
   emRota,
@@ -137,9 +139,7 @@ class EstadoChamado extends ChangeNotifier {
       }
     } else {
       final emCurso = todos
-          .where(
-            (c) => c.status == 'confirmada' || c.status == 'em_andamento',
-          )
+          .where((c) => c.status == 'confirmada' || c.status == 'em_andamento')
           .firstOrNull;
       if (emCurso != null) {
         _retomar(emCurso);
@@ -147,6 +147,8 @@ class EstadoChamado extends ChangeNotifier {
     }
 
     _disponiveis = [
+      for (final chamado in _disponiveis)
+        if (chamado.id.startsWith('demo-')) chamado,
       for (final chamado in todos)
         if ((chamado.status == 'enviada' || chamado.status == 'interrompida') &&
             chamado.id != _ativo?.id)
@@ -186,6 +188,7 @@ class EstadoChamado extends ChangeNotifier {
   }) async {
     final id = _ativo?.id;
     if (id == null) return;
+    if (id.startsWith('demo-')) return;
     try {
       await _sync.atualizar(
         id: id,
@@ -203,7 +206,8 @@ class EstadoChamado extends ChangeNotifier {
 
   /// Chamado aceito: começa o deslocamento.
   void aceitar([ChamadoRemoto? chamado]) {
-    final alvo = chamado ?? (_disponiveis.isNotEmpty ? _disponiveis.first : null);
+    final alvo =
+        chamado ?? (_disponiveis.isNotEmpty ? _disponiveis.first : null);
     if (alvo == null) return;
 
     _ativo = alvo.copiarCom(status: 'confirmada');
@@ -223,7 +227,10 @@ class EstadoChamado extends ChangeNotifier {
         inicio: _aceitoEm!,
         rodovia: alvo.solicitacao.rodovia,
         km: alvo.solicitacao.km,
-        equipe: alvo.equipe.replaceFirst(RegExp(r'^Equipe\s+', caseSensitive: false), ''),
+        equipe: alvo.equipe.replaceFirst(
+          RegExp(r'^Equipe\s+', caseSensitive: false),
+          '',
+        ),
       ),
     );
     notifyListeners();
@@ -267,6 +274,49 @@ class EstadoChamado extends ChangeNotifier {
     _ativo = null;
     notifyListeners();
     unawaited(_puxar());
+  }
+
+  /// Demonstração: injeta um chamado local, sem passar pelo dashboard.
+  ///
+  /// O id começa com "demo-" para o polling preservá-lo e para o app
+  /// não tentar reportar o status a um chamado que o servidor não conhece.
+  void simularNovoChamado() {
+    final r = Random();
+    const limite = 10.0;
+    final altura = 7.5 + r.nextInt(11) * 0.5;
+    const locais = ['SP-270', 'SP-280', 'SP-330'];
+
+    final chamado = ChamadoRemoto(
+      id: 'demo-${DateTime.now().microsecondsSinceEpoch}',
+      status: 'enviada',
+      equipe: equipeDoApp,
+      idPonto: 'DEMO',
+      situacao: 'Chamado gerado no app para demonstração.',
+      solicitacao: Solicitacao(
+        solicitadoEm: DateTime.now().subtract(
+          Duration(minutes: 3 + r.nextInt(40)),
+        ),
+        alturaGrama: altura,
+        alturaLimite: limite,
+        urgencia: altura >= limite
+            ? Urgencia.alta
+            : altura >= limite * 0.8
+            ? Urgencia.media
+            : Urgencia.baixa,
+        rodovia: locais[r.nextInt(locais.length)],
+        km: (600 + r.nextInt(1800)) / 10,
+        sentido: 'Sentido oeste',
+      ),
+    );
+
+    _disponiveis = [chamado, ..._disponiveis];
+    _recemChegados = [chamado.id, ..._recemChegados];
+    _vistos.add(chamado.id);
+
+    // Só muda de tela se não houver atendimento em curso.
+    if (_ativo == null) _tela = TelaHome.chamado;
+
+    notifyListeners();
   }
 
   /// Poda finalizada com foto de comprovação.
