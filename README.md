@@ -71,7 +71,7 @@ Três camadas, em três repositórios.
 | --- | --- |
 | **APK do aplicativo** | [Releases deste repositório](../../releases) |
 | **Vídeo final** | _a definir_ |
-| **Plano de negócio** | [Seção neste documento](#plano-de-negócio) |
+| **Plano de negócio** | [PDF completo](docs/te-mova-plano-de-negocio.pdf) · [resumo neste documento](#plano-de-negócio) | |
 | Repositório do dashboard | https://github.com/Senador2006/temova-dashboard |
 | Repositório do modelo preditivo | https://github.com/Senador2006/temova-modelo-1 |
 | Protótipo no Figma (Sprint 1) | [Abrir protótipo](https://www.figma.com/proto/DnZ2DDJSj2KItkNOfpQXNP/Sem-t%C3%ADtulo?node-id=45-44&t=PADFZAE2H7RRAnNQ-1) |
